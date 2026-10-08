@@ -98,7 +98,12 @@ if (-not (Test-Path (Join-Path $verDir "$PROFILE_ID.jar"))) { New-Item -ItemType
 # mods: this mod + Fabric API (checksum from Fabric's maven)
 $mods = Join-Path $gameDir 'mods'
 New-Item -ItemType Directory -Force $mods | Out-Null
-Copy-Item (Join-Path $here 'mc\build\libs\portalcraft-1.0.0.jar') $mods -Force
+$modJar = Get-ChildItem (Join-Path $here 'mc\build\libs') -Filter 'portalcraft-*.jar' | Where-Object { $_.Name -notlike '*-sources.jar' } |
+	Sort-Object LastWriteTime -Descending | Select-Object -First 1
+if (-not $modJar) { throw 'mc\build\libs has no portalcraft jar.' }
+# an update: the older version's jar goes (Fabric refuses two copies of one mod)
+Get-ChildItem $mods -Filter 'portalcraft-*.jar' | Where-Object { $_.Name -ne $modJar.Name } | Remove-Item -Force
+Copy-Item $modJar.FullName $mods -Force
 $apiJar = Join-Path $mods "fabric-api-$FABRIC_API.jar"
 if (-not (Test-Path $apiJar)) {
 	$url = "https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/$FABRIC_API/fabric-api-$FABRIC_API.jar"

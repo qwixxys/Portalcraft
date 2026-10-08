@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.1 (2026-10-09)
+- Fixed: Minecraft blocks behind Portal 2's laser beams hid them, and so did holes under a beam. Portal 2's glowing
+  effects (lasers, sprites, particles) are captured as a layer of their own, with their own depth, and go back on top
+  of Minecraft wherever they are nearer than its blocks.
+- Fixed: thin outlines of Portal 2 objects showed through Minecraft blocks standing in front of them.
+- Updating replaces the older mod jar instead of leaving both in the mods folder.
+
 ## 1.0.0 (2026-10-08)
 First release. Portal 2 (Steam, build 10090) + Minecraft Java 26.3 with Fabric Loader 0.19.5 and Fabric API 0.161.0.
 

@@ -4,6 +4,7 @@
 #include "game.hpp"
 #include "bridge.hpp"
 #include "render.hpp"
+#include "glow.hpp"
 #include "input.hpp"
 #include "solids.hpp"
 #include "console.hpp"
@@ -182,8 +183,11 @@ static void on_present(command_queue *, swapchain *swap, const rect *, const rec
 		unsigned upload = render::state.upload_us - s_upload, uploads = render::state.uploads - s_uploads;
 		s_synced = render::state.synced; s_late = render::state.late; s_wait = render::state.wait_us;
 		s_upload = render::state.upload_us; s_uploads = render::state.uploads;
-		snprintf(line, sizeof(line), "Portalcraft: in step with Minecraft %u frames, late %u, average wait %u us, upload %u us%s",
-			synced, late, synced + late ? wait / (synced + late) : 0, uploads ? upload / uploads : 0, render::state.staged ? "" : " (direct)");
+		static unsigned s_glow = 0;
+		unsigned glows = glow::draws - s_glow;
+		s_glow = glow::draws;
+		snprintf(line, sizeof(line), "Portalcraft: in step with Minecraft %u frames, late %u, average wait %u us, upload %u us%s, glow draws %u",
+			synced, late, synced + late ? wait / (synced + late) : 0, uploads ? upload / uploads : 0, render::state.staged ? "" : " (direct)", glows);
 		log(line);
 	}
 }
@@ -200,7 +204,13 @@ static bool on_create_swapchain(device_api api, swapchain_desc &desc, void *)
 
 static void on_begin_effects(effect_runtime *rt, command_list *, resource_view, resource_view)
 {
+	glow::begin_effects(rt);
 	render::begin_effects(rt);
+}
+
+static void on_finish_effects(effect_runtime *, command_list *cmd, resource_view, resource_view)
+{
+	glow::finish_effects(cmd);
 }
 
 static void on_destroy_device(device *dev)
@@ -208,6 +218,7 @@ static void on_destroy_device(device *dev)
 	if (dev->get_api() != device_api::d3d9)
 		return;
 	render::shutdown(dev);
+	glow::shutdown(dev);
 }
 
 BOOL APIENTRY DllMain(HMODULE module, DWORD reason, LPVOID)
@@ -221,7 +232,9 @@ BOOL APIENTRY DllMain(HMODULE module, DWORD reason, LPVOID)
 		reshade::register_event<reshade::addon_event::create_swapchain>(on_create_swapchain);
 		reshade::register_event<reshade::addon_event::present>(on_present);
 		reshade::register_event<reshade::addon_event::reshade_begin_effects>(on_begin_effects);
+		reshade::register_event<reshade::addon_event::reshade_finish_effects>(on_finish_effects);
 		reshade::register_event<reshade::addon_event::destroy_device>(on_destroy_device);
+		glow::attach();
 		log("Portalcraft: loaded");
 		break;
 	case DLL_PROCESS_DETACH:

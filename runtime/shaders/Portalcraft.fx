@@ -28,6 +28,8 @@ texture PC_ColorTex : PC_COLOR;
 texture PC_DepthTex : PC_MCDEPTH;
 texture PC_OverlayTex : PC_OVERLAY;
 texture PC_HolesTex : PC_HOLES;
+texture PC_GlowTex : PC_GLOW; // Portal 2's additive effects drawn a second time on their own (black elsewhere)
+texture PC_GlowDepthTex : PC_GLOWDEPTH; // and their nearest depth (Portal 2's projection, 1 where there are none)
 
 sampler sBack { Texture = BackBufferTex; };
 sampler sP2Depth { Texture = DepthBufferTex; MagFilter = POINT; MinFilter = POINT; MipFilter = POINT; };
@@ -35,6 +37,8 @@ sampler sColor { Texture = PC_ColorTex; MagFilter = POINT; MinFilter = POINT; Mi
 sampler sDepth { Texture = PC_DepthTex; MagFilter = POINT; MinFilter = POINT; MipFilter = POINT; };
 sampler sOverlay { Texture = PC_OverlayTex; MagFilter = POINT; MinFilter = POINT; MipFilter = POINT; };
 sampler sHoles { Texture = PC_HolesTex; MagFilter = POINT; MinFilter = POINT; MipFilter = POINT; AddressU = CLAMP; AddressV = CLAMP; };
+sampler sGlow { Texture = PC_GlowTex; MagFilter = POINT; MinFilter = POINT; MipFilter = POINT; };
+sampler sGlowDepth { Texture = PC_GlowDepthTex; MagFilter = POINT; MinFilter = POINT; MipFilter = POINT; };
 
 void VS(in uint id : SV_VertexID, out float4 pos : SV_Position, out float2 uv : TEXCOORD)
 {
@@ -160,25 +164,34 @@ float3 PS(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
 	float3 ray = mc_ray(uv);
 	float2 wuv = ray.xy; // the Minecraft world layer, turned to this camera (the hand/HUD layer stays on screen)
 	float w = ray.x < 0.0 ? 0.0 : tex2D(sDepth, wuv).r;
+	float mcz = w > 0.0 ? mc_distance(w) * ray.z : 1e9; // along this camera's view axis, like p2z (none: its sky)
+	bool minecraft = false; // this pixel shows Minecraft instead of Portal 2
 	if (hole)
 	{
 		// the wall is gone: whatever Minecraft has behind it. Only its sky (nothing there) keeps Portal 2's pixel: along
 		// a hole's rim Minecraft's ray just misses the hole's side, which showed as a thin line of sky
-		if (w > 0.0)
-			col = mc_tex(sColor, wuv).rgb;
+		minecraft = w > 0.0;
 	}
 	else if (w > 0.0)
 	{
-		float mcz = mc_distance(w) * ray.z; // along this camera's view axis, like p2z
 		// Minecraft must be clearly in front: its rock behind Portal 2's walls lies exactly on their surfaces (more so
-		// when its frame was drawn from elsewhere, which only happens when Minecraft got stuck)
+		// when its frame was drawn from elsewhere, which only happens when Minecraft got stuck). The slope margin only
+		// in the open (from inside Portal 2's wall its depth has edges everywhere) and not across an edge between two
+		// things far apart in depth (their outline showed through Minecraft's blocks in front of them)
 		float moved = PC_SUp.w > 0.5 ? distance(PC_Eye.xyz, PC_SEye.xyz) : 0.0;
-		// (the slope margin only in the open: from inside Portal 2's wall its depth has edges everywhere)
-		if (mcz < p2z - (1.0 + 0.0015 * p2z + 2.0 * moved + (PC_Eye.w < 0.5 ? 2.0 * slope : 0.0)) || PC_P2.w > 1.5)
-			col = mc_tex(sColor, wuv).rgb;
+		float margin = PC_Eye.w < 0.5 && slope < 0.15 * p2z ? slope : 0.0;
+		minecraft = mcz < p2z - (1.0 + 0.0015 * p2z + 2.0 * moved + margin) || PC_P2.w > 1.5;
 	}
 	else if (PC_Eye.w > 1.5 && ray.x >= 0.0)
-		col = mc_tex(sColor, wuv).rgb; // inside the walls: Portal 2 seen from behind is not real, Minecraft's sky is
+		minecraft = true; // inside the walls: Portal 2 seen from behind is not real, Minecraft's sky is
+	if (minecraft)
+	{
+		col = mc_tex(sColor, wuv).rgb;
+		// Portal 2's glowing effects (laser, sprites, particles) have no depth in Portal 2's own buffer: back on top of
+		// Minecraft where they are nearer than its block
+		if (p2_distance(tex2D(sGlowDepth, uv).r) < mcz + 2.0)
+			col += tex2D(sGlow, uv).rgb;
+	}
 	float4 o = mc_tex(sOverlay, mcuv);
 	col = col * (1.0 - o.a) + o.rgb; // the hand/HUD layer is premultiplied
 	if (PC_P2.z > 0.5)

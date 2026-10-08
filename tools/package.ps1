@@ -1,8 +1,10 @@
 # Builds the release zip: what install.cmd needs (built add-on, mod jar, ReShade, scripts, shader), the sources,
 # and the docs. No game files, no dev world, no logs. Output: ..\..\release\Portalcraft-<version>.zip
-param([string]$Version = '1.0.0')
+param([string]$Version = '')
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
+# the version the mod is built with
+if (-not $Version) { $Version = ((Get-Content (Join-Path $root 'mc\gradle.properties')) -match '^version=' -replace '^version=', '').Trim() }
 $out = Join-Path (Split-Path -Parent $root) 'release'
 $name = "Portalcraft-$Version"
 $stage = Join-Path $out $name
@@ -20,7 +22,7 @@ function Add([string]$rel) {
 # to play
 foreach ($f in 'Portalcraft.cmd', 'install.cmd', 'install.ps1', 'uninstall.cmd', 'play.cmd', 'play.ps1',
 	'README.md', 'README.ru.md', 'CHANGELOG.md', 'PROTOCOL.md', 'LICENSE', 'tools\find-portal2.ps1',
-	'addon\out\Portalcraft.addon32', 'mc\build\libs\portalcraft-1.0.0.jar', 'runtime',
+	'addon\out\Portalcraft.addon32', "mc\build\libs\portalcraft-$Version.jar", 'runtime',
 	'p2\scripts\vscripts\portalcraft\solids.nut', 'p2\scripts\vscripts\portalcraft\view.nut',
 	'third_party\reshade_payload\ReShade32.dll', 'third_party\reshade-6.8.0\LICENSE.md') { Add $f }
 # to build it yourself

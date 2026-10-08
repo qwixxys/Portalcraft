@@ -16,7 +16,7 @@ solid to Chell.
 - Minecraft Java Edition with the official launcher (the installer adds Fabric Loader 0.19.5 and Fabric API for 26.3)
 
 ## Install
-1. Download `Portalcraft-1.0.0.zip` from [Releases](https://github.com/qwixxys/Portalcraft/releases) and unzip it.
+1. Download the latest `Portalcraft-<version>.zip` from [Releases](https://github.com/qwixxys/Portalcraft/releases) and unzip it.
 2. Close the Minecraft Launcher and run `install.cmd`.
 
 ## Play
