@@ -1,7 +1,8 @@
 // Portalcraft: composites Minecraft's frame into Portal 2 by depth.
 // PC_MC     = (Minecraft near, far (blocks), depth mode, has frame)
-// PC_P2     = (Portal 2 near, far (units), cursor visible, debug mode: write 1-6 into portalcraft_runtime/debug.txt;
-//             1 Portal 2 depth, 2 no depth test, 3 Minecraft depth, 4 cell grid + holes, 5 hole texture, 6 cell colours)
+// PC_P2     = (Portal 2 near, far (units), cursor visible, debug mode: write 1-7 into portalcraft_runtime/debug.txt;
+//             1 Portal 2 depth, 2 no depth test, 3 Minecraft depth, 4 cell grid + holes, 5 hole texture, 6 cell colours,
+//             7 glow layer; 9 turns the glow layer off)
 // PC_Cursor = (x, y) in 0..1 for Minecraft screens, z = 1: colour layers hold R,G,B,A bytes in a B,G,R,A texture
 // PC_Eye/Fwd/Right/Up = Portal 2's camera (Source units): eye + where it is (0 open, 1 inside a wall's hole, 2 deep in
 //                       the walls); basis + tan(half fov) y, x;
@@ -122,6 +123,8 @@ float3 PS(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
 		return col;
 	if (PC_P2.w > 2.5 && PC_P2.w < 3.5)
 		return saturate(mc_distance(max(tex2D(sDepth, float2(uv.x, 1.0 - uv.y)).r, 1e-6)) / 1024.0).xxx;
+	if (PC_P2.w > 6.5 && PC_P2.w < 7.5) // debug 7: Portal 2's glow layer (brightened), red where it has its own depth
+		return tex2D(sGlow, uv).rgb * 4.0 + float3(tex2D(sGlowDepth, uv).r < 0.999999 ? 0.3 : 0.0, 0.0, 0.0);
 	if (PC_P2.w > 4.5 && PC_P2.w < 5.5) // debug 5: the hole grid texture itself (any hole = bright), and whether the grid is on
 	{
 		float4 t = tex2Dlod(sHoles, float4(uv, 0.0, 0.0));
@@ -188,10 +191,12 @@ float3 PS(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
 	{
 		col = mc_tex(sColor, wuv).rgb;
 		// Portal 2's glowing effects (laser, sprites, particles) have no depth in Portal 2's own buffer: back on top of
-		// Minecraft where they are nearer than its block (no depth of theirs at all: on top, the layer is black
-		// where there is no glow)
+		// Minecraft where they are nearer than its block, and in front of Portal 2's own surface there. Light added
+		// onto a surface (the projected sunlight and its shadows) lies on it: not over a hole blown into that surface.
+		// (No depth of theirs at all: on top; the layer is black where there is no glow.)
 		float gd = tex2D(sGlowDepth, uv).r;
-		if (gd > 0.999999 || p2_distance(gd) < mcz + 2.0)
+		float gz = p2_distance(gd);
+		if (gd > 0.999999 || (gz < mcz + 2.0 && gz < p2z - (2.0 + 0.002 * p2z)))
 			col += tex2D(sGlow, uv).rgb;
 	}
 	float4 o = mc_tex(sOverlay, mcuv);

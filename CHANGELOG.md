@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.5 (2026-10-09)
+- Fixed: a hole blown into a wall under Portal 2's projected sunlight still showed the light, its shadows and the
+  wall's texture over the Minecraft rock. Portal 2's added light lies on its surfaces; the composite now puts a glow
+  back on top of Minecraft only where it is in front of Portal 2's own surface (a laser beam), not on it.
+- `debug.txt` value 7 shows the glow layer.
+
 ## 1.0.4 (2026-10-09)
 - Fixed: since 1.0.3 laser beams were cut by every Minecraft block, even blocks behind them. 1.0.3 judged from
   Portal 2's device creation flags that render states can't be read back and skipped the glows' depth; the add-on
