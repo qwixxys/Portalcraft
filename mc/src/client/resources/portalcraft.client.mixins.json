@@ -1,0 +1,7 @@
+{
+	"required": true,
+	"package": "dev.portalcraft.client.mixin",
+	"compatibilityLevel": "JAVA_25",
+	"client": ["CameraMixin", "GameRendererMixin", "InputConstantsMixin", "WindowMixin", "MinecraftMixin", "FramerateLimitTrackerMixin", "GlCommandEncoderMixin", "HudMixin", "MusicManagerMixin", "LightCoordsUtilMixin", "EntityRendererMixin", "ModelBlockRendererMixin", "IndigoBlockRendererMixin"],
+	"injectors": { "defaultRequire": 1 }
+}

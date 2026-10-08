@@ -1,0 +1,25 @@
+# build output
+addon/out/
+mc/build/
+mc/.gradle/
+mc/run/
+mc/out/
+mc/bin/
+mc/remappedSrc/
+
+# logs from test runs
+*.log
+
+# only the 32-bit ReShade runtime is used (Portal 2 is 32-bit); the installer it came from stays local
+third_party/ReShade_Setup_*.exe
+third_party/reshade_payload/ReShade64*
+third_party/reshade_payload/*_XR.json
+
+# test helpers tied to one machine
+tools/deploy.sh
+tools/session.sh
+
+# editors
+.idea/
+.vscode/
+*.iml

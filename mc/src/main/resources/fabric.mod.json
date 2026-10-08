@@ -1,0 +1,30 @@
+{
+	"schemaVersion": 1,
+	"id": "portalcraft",
+	"version": "${version}",
+	"name": "Portalcraft",
+	"description": "Real Minecraft drawn inside Portal 2 (passthrough mashup). AI-built with Claude Code.",
+	"authors": ["qwixxys"],
+	"contributors": ["Claude Code (Anthropic)"],
+	"contact": {
+		"homepage": "https://github.com/qwixxys/Portalcraft",
+		"sources": "https://github.com/qwixxys/Portalcraft",
+		"issues": "https://github.com/qwixxys/Portalcraft/issues"
+	},
+	"license": "MIT",
+	"environment": "*",
+	"entrypoints": {
+		"main": ["dev.portalcraft.Portalcraft"],
+		"client": ["dev.portalcraft.client.PortalcraftClient"]
+	},
+	"mixins": [
+		"portalcraft.mixins.json",
+		{ "config": "portalcraft.client.mixins.json", "environment": "client" }
+	],
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.3",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}
