@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.2 (2026-10-09)
+- Fixed: craters blown into ceilings (and other holes with no sky above) were black. Portal 2's rooms now light the
+  first few blocks of every hole in their walls, fading with depth; tunnels dug farther keep Minecraft's own light.
+
 ## 1.0.1 (2026-10-09)
 - Fixed: Minecraft blocks behind Portal 2's laser beams hid them, and so did holes under a beam. Portal 2's glowing
   effects (lasers, sprites, particles) are captured as a layer of their own, with their own depth, and go back on top

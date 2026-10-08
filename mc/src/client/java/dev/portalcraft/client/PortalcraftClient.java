@@ -234,6 +234,15 @@ public class PortalcraftClient implements ClientModInitializer {
 		if (++solidTick % 5 == 0) publishSolids(mc, p);
 		if (solidTick % 10 == 0) runCommandFile(mc, p);
 		publishHoles();
+		// the rooms' light in new (or closed) holes: the blocks around them are meshed again with it
+		P2Map lit = P2Map.current;
+		if (lit != null) {
+			int r = P2Map.HOLE_LIGHT_REACH;
+			for (Long k; (k = lit.lightChanged.poll()) != null; ) {
+				int x = BlockPos.getX(k), y = BlockPos.getY(k), z = BlockPos.getZ(k);
+				mc.levelExtractor.setBlocksDirty(x - r, y - r, z - r, x + r, y + r, z + r);
+			}
+		}
 		// blocks meshed before the map was read have Minecraft's own (dark) light inside Portal 2's rooms
 		if (P2Map.current != litMap) {
 			litMap = P2Map.current;

@@ -123,10 +123,45 @@ public final class P2Map {
 
 	/**
 	 * Minecraft draws blocks here at full light: Portal 2's rooms are lit (whatever surrounds them in Minecraft) and
-	 * so is the bottom of a fresh hole in their walls. Tunnels dug deeper keep Minecraft's own (dark) light.
+	 * so is the bottom of a fresh hole in their walls. Deeper in, see holeLight.
 	 */
 	public boolean litForRendering(int x, int y, int z) {
 		return !p2Solid(x, y, z) || broken.contains(BlockPos.asLong(x, y, z));
+	}
+
+	/** How far the rooms' light reaches into holes and craters, and how much it fades per block. */
+	public static final int HOLE_LIGHT_REACH = 5;
+	private static final int HOLE_LIGHT_FADE = 2;
+	/**
+	 * Block light the rooms throw into holes (pos -> level, by distance to the nearest broken wall cell): a crater
+	 * blown into a ceiling has no sky above it, and Minecraft's own light left it black. Tunnels dug farther away keep
+	 * Minecraft's light. Render threads read it.
+	 */
+	private final ConcurrentHashMap<Long, Integer> holeLight = new ConcurrentHashMap<>();
+	/** Holes opened or closed since the client last looked (it re-meshes around them for the new light). */
+	public final java.util.concurrent.ConcurrentLinkedQueue<Long> lightChanged = new java.util.concurrent.ConcurrentLinkedQueue<>();
+	private volatile boolean holeLightStale;
+
+	public int holeLight(int x, int y, int z) {
+		Integer l = holeLight.get(BlockPos.asLong(x, y, z));
+		return l == null ? 0 : l;
+	}
+
+	private void lightAround(long key) {
+		int cx = BlockPos.getX(key), cy = BlockPos.getY(key), cz = BlockPos.getZ(key);
+		for (int dy = -HOLE_LIGHT_REACH; dy <= HOLE_LIGHT_REACH; dy++)
+			for (int dz = -HOLE_LIGHT_REACH; dz <= HOLE_LIGHT_REACH; dz++)
+				for (int dx = -HOLE_LIGHT_REACH; dx <= HOLE_LIGHT_REACH; dx++) {
+					int d = Math.max(Math.abs(dx), Math.max(Math.abs(dy), Math.abs(dz)));
+					if (d == 0) continue;
+					holeLight.merge(BlockPos.asLong(cx + dx, cy + dy, cz + dz), 15 - HOLE_LIGHT_FADE * d, Math::max);
+				}
+	}
+
+	private void rebuildHoleLight() {
+		holeLightStale = false;
+		holeLight.clear();
+		for (Long b : broken) lightAround(b);
 	}
 
 	/**
@@ -308,6 +343,12 @@ public final class P2Map {
 		if (!changed) return;
 		brokenVersion.incrementAndGet();
 		brokenDirty = true;
+		// the rooms' light in the hole: a new hole adds its own, a closed one means working it out again (once, after a
+		// reset closes them all)
+		if (!ok) lightAround(key);
+		else if (quiet) holeLightStale = true;
+		else rebuildHoleLight();
+		lightChanged.add(key);
 		if (!ok) Portalcraft.LOG.info("wall of {} broken at {} (Source cell {} {} {})", name, pos.toShortString(), pos.getX() - regionX, -(pos.getZ() + 1), pos.getY() - Y_OFFSET);
 		var cb = onBreak;
 		if (cb != null && !ok) cb.accept(pos.immutable());
@@ -332,11 +373,13 @@ public final class P2Map {
 		rockDirty = true;
 		dirtyChanged = true;
 		brokenDirty = true;
+		if (holeLightStale) rebuildHoleLight();
 		saveIfDirty();
 	}
 
 	private void load() {
 		readLongs(brokenFile, broken);
+		rebuildHoleLight();
 		brokenVersion.incrementAndGet();
 	}
 
