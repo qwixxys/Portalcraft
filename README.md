@@ -1,163 +1,54 @@
-# Portalcraft: настоящий Minecraft внутри Portal 2
+# Portalcraft
 
-Рядом с Portal 2 работает настоящий Minecraft Java 26.3. Его камера следует за камерой Portal 2, а кадр
-встраивается в каждый кадр Portal 2 с учётом глубины. Блоки Minecraft стоят на полах Portal 2 и прячутся
-за его стенами. Интерфейс, инвентарь, рука, крафт, звуки и мир — всё от Minecraft. Блоки Minecraft твёрдые
-в Portal 2 и нажимают его напольные кнопки.
+Real Minecraft inside Portal 2. Minecraft Java 26.3 runs alongside Portal 2, renders every frame from Portal 2's
+camera, and is blended into the picture by depth: blocks stand on Portal 2's floors, hide behind its walls and are
+solid to Chell.
 
-## Что нужно
-- Portal 2 из Steam (проверено на сборке 10090, одиночная игра).
-- Minecraft Java Edition на твоём аккаунте в официальном лаунчере. Мод для версии **26.3**: установщик
-  сам добавит Fabric Loader 0.19.5 и Fabric API 0.161.0 (нужен интернет при первой установке).
-- Windows 10/11 и видеокарта, которая тянет обе игры сразу. Python, Java и Visual Studio не нужны: всё собрано.
+## Features
+- Build, mine and craft in Portal 2's test chambers; Minecraft blocks press floor buttons.
+- Break Portal 2's walls and floors by hand or with TNT and dig into real Minecraft terrain behind them.
+- Minecraft chat and commands, mobs, inventory, elytra.
+- Starting a map again resets it; loading a save keeps your changes.
 
-## Установка
-1. При первой установке закрой лаунчер Minecraft (потом, при обновлении, это уже не нужно).
-2. Запусти `install.cmd`. Что он делает:
-   - Portal 2: создаёт папку `Portal 2\portalcraft_runtime` (дополнение ReShade, шейдер, настройки)
-     и `portal2\scripts\vscripts\portalcraft` (скрипты для твёрдых блоков и вида от третьего лица);
-   - Minecraft: добавляет в лаунчер установку **Portalcraft** (Fabric 0.19.5 для 26.3) с отдельной
-     папкой `.minecraft\portalcraft`, кладёт туда мод и Fabric API (загрузки сверяются по контрольным
-     суммам с Maven Fabric). Перед изменением `launcher_profiles.json` сохраняется
-     `launcher_profiles.json.portalcraft-backup`.
+## Requirements
+- Windows 10/11
+- Portal 2 (Steam)
+- Minecraft Java Edition with the official launcher (the installer adds Fabric Loader 0.19.5 and Fabric API for 26.3)
 
-## Как играть
-1. Запусти `play.cmd`. Он кладёт ReShade (`bin\d3d9.dll`) в Portal 2 только на время игры, запускает
-   Portal 2 с `-insecure -novid` и открывает лаунчер Minecraft.
-2. В лаунчере выбери **Portalcraft** и нажми «Играть». Лаунчер предупредит о модифицированной версии,
-   нажми «Играть» ещё раз. Окно Minecraft прячется само.
-3. В Portal 2 начни любую главу. Когда Portal 2 закроется, ReShade уберётся из папки игры, а Minecraft сам
-   сохранит мир и закроется.
+## Install
+1. Download `Portalcraft-1.0.0.zip` from [Releases](https://github.com/qwixxys/Portalcraft/releases) and unzip it.
+2. Close the Minecraft Launcher and run `install.cmd`.
 
-## Управление
-| Клавиша | Действие |
+## Play
+1. Run `Portalcraft.cmd`. It starts Portal 2 and opens the Minecraft Launcher.
+2. Pick the **Portalcraft** installation in the launcher and press Play.
+3. Start any chapter in Portal 2.
+
+| Key | Action |
 |---|---|
-| **B** | режим строительства Minecraft ↔ портальная пушка |
-| ЛКМ / ПКМ (строительство) | сломать / поставить блок |
-| колесо, 1–9 | ячейка хотбара |
-| E (строительство) | инвентарь Minecraft; курсор — обычная мышь, Esc закрывает |
-| Q | выбросить предмет |
-| **V** | взять / отпустить предмет Portal 2 (куб, турель) в любом режиме |
-| E (портальная пушка) | обычное «использовать» Portal 2 |
-| **F5** | вид от третьего лица (видно твоего персонажа Minecraft) ↔ от первого |
-| **T** | чат Minecraft (в любом режиме); Enter — отправить, Esc — закрыть |
-| **/** | чат сразу с «/» для команд (с подсказками и Tab, как в Minecraft) |
-| пробел в воздухе | раскрыть элитры, если они надеты |
-| ` или ё | консоль Portal 2 (T и / при подключённом Minecraft открывают чат Minecraft) |
+| B | Minecraft build mode / portal gun |
+| LMB / RMB | Break / place (build mode) |
+| E | Inventory (build mode) |
+| V | Grab Portal 2 objects |
+| F5 | Third person |
+| T, / | Chat, commands |
+| Space in mid-air | Elytra |
 
-Блоки Minecraft рядом с тобой (в радиусе примерно камеры) твёрдые в Portal 2: на них можно встать.
-Блок, поставленный на напольную кнопку, нажимает её, а если блок убрать, кнопка отпускается.
+`uninstall.cmd` removes everything except your Minecraft world.
 
-## Чат и команды
-T открывает чат, `/` — сразу строку команды. Мир создан в творческом режиме с читами, так что работают
-все команды: `/gamemode survival`, `/give @s elytra`, `/summon minecraft:zombie`, `/time set night` и т. д.
-Для команд переключи раскладку на английскую (Alt+Shift), как в обычном Minecraft.
-Музыки Minecraft нет, остальные звуки (блоки, мобы, взрывы) звучат.
+## Notes
+- Single player only. The mod enables `sv_cheats`, so Steam achievements don't unlock while it runs.
+- Nether and End portals are disabled.
+- Full guide in Russian: [README.ru.md](README.ru.md). Shared-memory protocol: [PROTOCOL.md](PROTOCOL.md).
 
-## Ломать стены и пол Portal 2
-Стены, пол и потолок Portal 2 можно ломать как блоки: ЛКМ в режиме строительства (в творческом — сразу,
-в выживании — как камень), динамитом, взрывом крипера. На месте сломанного блока Portal 2 больше не
-рисует свою стену, а за ней — настоящая подземная порода Minecraft: камень, глубинный сланец, руды,
-пещеры с водой и лавой (тот же шум, что у генератора Minecraft), а если прокопаться вверх — земля с травой.
-Порода появляется сама, когда что-то её открывает (дыра, взрыв, ты в туннеле), и запоминается.
-Видна она только через дыры и из туннелей: грани, которые лежат прямо на стенах Portal 2, Minecraft не
-рисует. В стеклянных, решётчатых и невидимых стенках Portal 2 породы нет. Порода в стенах — всегда
-сплошной камень: гравий и песок из потолка не сыплются. Миры из ранних сборок чинятся сами при загрузке
-карты: гравий в стенах становится камнем, а дыры, которые он оставил, закрываются.
+## Building
+- `mc/`: Fabric mod, `gradlew build` (Java 25).
+- `addon/`: ReShade add-on, `build.cmd` (MSVC, x86).
 
-Когда рядом дыра (или ты в туннеле, или летишь), игроком управляет физика Minecraft: можно провалиться,
-копать вниз и в стороны, плавать, лазить. В это время WASD, пробел, Shift и Ctrl (присесть) — клавиши
-Minecraft, бег — двойное W, а Челл ждёт у края дыры. Отойди от дыр — управление вернётся к Portal 2
-(порталы, кнопки, V). Сломанные стены сохраняются между запусками игры.
+## Credits
+- [ReShade](https://reshade.me) by crosire (BSD-3-Clause), [Fabric](https://fabricmc.net) (Apache-2.0).
+- Portal 2 by Valve, Minecraft by Mojang. No game files are included.
+- Made by qwixxys; the code was written by Claude Code (Anthropic, Claude Opus 5.5).
 
-В туннелях за стенами темно, как в пещере: бери факелы. Сами камеры Portal 2 для блоков Minecraft
-всегда освещены.
-
-## Новое прохождение и сохранения
-Сторона Minecraft у каждой карты живёт, пока ты на ней:
-- **свежий заход на карту** (новая игра, выбор главы, переход на следующую карту, `map`) — всё, что ты
-  построил, сломал или призвал на этой карте раньше, убирается: стены целые, порода за ними забыта, мобов нет;
-- **загрузка сохранения** (смерть, быстрая загрузка, «Продолжить») — всё остаётся как было.
-Пока карта очищается (обычно меньше секунды), Portal 2 показывает только себя.
-
-## Одна картинка
-Каждый кадр Minecraft рисуется камерой Portal 2, и Portal 2 показывает свой кадр только вместе с ним, так
-что блоки и мобы не отстают от стен ни при поворотах, ни при ходьбе. Частота кадров у обеих игр общая: на
-2560×1080 в проверке было около 64 кадров/с. Если Minecraft застрял дольше 25 мс, Portal 2 показывает его
-последний кадр, довёрнутый под свою камеру. На время игры Portal 2 рисует в один поток (`mat_queue_mode 0`,
-в настройки не записывается), а дальность прорисовки Minecraft ограничена 10 чанками.
-
-## Полы на полублоке
-В картах Portal 2 часть полов и потолков стоит не на границе блока, а посередине. Под такими полами лежат
-плиты Minecraft ровно на высоте пола: игрок, мобы и предметы стоят на полу Portal 2, а не над ним. Вокруг
-дыр стены Portal 2 изнутри заполняются породой (у дыры видны стенки, а не пустота под полом). Стекло, решётки,
-наклонные и изогнутые детали Portal 2 динамит не берёт: сетка блоков резала бы их ступеньками (рукой в
-творческом режиме их сломать можно). Блоки,
-поставленные на такой пол, всё же висят на полблока над ним: сетка Minecraft не делится пополам.
-
-## Мобы
-Яйца призыва из творческого инвентаря (ПКМ по полу) или `/summon`. Сложность — «Нормальная», поэтому
-монстры не исчезают; в творческом режиме они тебя не трогают, а зомби и скелеты не горят на солнце. Сами по себе мобы появляются только в
-тёмных пещерах за стенами, в камерах — нет. Время в мире остановлено на полдне (`/time resume`, если
-хочешь смену дня и ночи), фантомов нет.
-
-## Элитры
-Надень элитры (творческий инвентарь или `/item replace entity @s armor.chest with elytra`), прыгни или
-шагни с высоты и нажми пробел ещё раз в воздухе. Пока летишь, управляет Minecraft (фейерверк в руке и ПКМ
-разгоняют). После приземления вдали от дыр управление вернётся к Portal 2.
-
-## Ограничения
-- Стены Portal 2 переводятся в невидимые барьеры Minecraft по сетке 32 юнита (1 блок). Тонкие ступеньки
-  и платформы превращаются в целый блок, поэтому иногда блок встаёт перед кнопкой, а не на неё:
-  ориентируйся по рамке выделения Minecraft.
-- Освещение у блоков Minecraft своё, дневное, а не освещение Portal 2.
-- Сквозь дыру видно только Minecraft: другая комната Portal 2 за стеной появится, когда в неё войдёшь.
-- Кубы и другие предметы Portal 2 не падают в дыры (для Portal 2 пол на месте). Порталы через дыры
-  не работают, пока управляет Minecraft.
-- Карты Portal 2 выше 384 блоков Minecraft не помещаются по высоте целиком.
-- Порталы в Нижний мир и Край не работают: с картой Portal 2 совпадает только обычный мир. Если
-  сохранение было сделано в другом измерении, игрока вернёт в обычный мир.
-- Блоки Minecraft становятся твёрдыми в Portal 2 только вокруг игрока: до 300 объединённых коробок,
-  сначала ближайшие. У очень больших построек дальние части в Portal 2 проходимы.
-- Порталы не ставятся на блоки Minecraft, а Minecraft не виден сквозь порталы.
-- Сталкиваются ли кубы и турели Portal 2 с блоками Minecraft, не проверено (игрок сталкивается).
-- Мод включает `sv_cheats 1`: в этой сессии Steam-достижения Portal 2 не открываются. Сглаживание MSAA
-  выключается, иначе ReShade не может прочитать глубину Portal 2.
-- Только одиночная игра. В совместную игру онлайн с этим не заходи.
-
-## Если что-то не работает
-- Лог дополнения: `Portal 2portalcraft_runtimeReShade.log` (строки `Portalcraft:`). Раз в 5 секунд там
-  видно карту, связь с Minecraft (`minecraft=yes`) и синхронизацию кадров.
-- Лог Minecraft: `%APPDATA%.minecraftportalcraftogsatest.log` (строки `portalcraft`).
-- «чужой d3d9.dll»: в `Portal 2in` лежит другой мод на ReShade или похожий; Portalcraft его не трогает.
-- Нет Minecraft в кадре: в лаунчере должна быть выбрана установка **Portalcraft**, а не обычная версия.
-- Отладочные виды шейдера: число 1–6 в файле `Portal 2portalcraft_runtimedebug.txt` (1 — глубина Portal 2,
-  2 — Minecraft без проверки глубины, 4 — сетка клеток и дыры), удали файл, чтобы вернуть обычный вид.
-
-## Удаление
-`uninstall.cmd` удаляет файлы из Portal 2 и установку из лаунчера. Мир Minecraft в
-`.minecraft\portalcraft` остаётся.
-
-## Как это устроено
-- `addon/`: дополнение ReShade (C++, 32 бит). Через RTTI находит `ClientModePortalNormal`, подменяет
-  `OverrideView` (камера) и `CreateMove` (кнопки), читает игрока по именам сетевых переменных, пишет
-  всё в общую память и встраивает кадр Minecraft шейдером `runtime/shaders/Portalcraft.fx`.
-- `mc/`: мод Fabric. Камера Minecraft = камера Portal 2, игрок стоит там же, кадр (мир + глубина +
-  слой руки и интерфейса) читается с GPU и пишется в общую память. Карта Portal 2 (`.bsp`) переводится
-  в барьеры, у каждой карты своя область мира. Сломанные барьеры — дыры: их сетка уходит в шейдер, он
-  восстанавливает по глубине Portal 2 мировую точку каждого пикселя и прячет стену в сломанной клетке.
-  Порода за стенами генерируется шумом Minecraft (`TerrainGen`), рядом с дырами Minecraft ведёт игрока
-  своей физикой, а Portal 2 рисует кадр из его камеры.
-- `p2/`: VScript для твёрдых коробок, кнопок и скрытия Челл.
-- Протокол общей памяти описан в `PROTOCOL.md`.
-
-## Благодарности и лицензии
-- Код Portalcraft — MIT (`LICENSE`).
-- [ReShade](https://reshade.me) 6.8.0 с поддержкой дополнений (crosire, BSD-3-Clause,
-  `third_party/reshade-6.8.0/LICENSE.md`): `ReShade32.dll` взят из официального установщика.
-- [Fabric Loader и Fabric API](https://fabricmc.net) (Apache-2.0): установщик скачивает их с Maven Fabric
-  и сверяет контрольные суммы.
-- Portal 2 — Valve, Minecraft — Mojang/Microsoft. Файлов этих игр в моде нет: всё берётся из твоих копий.
-  Ничего не сгенерировано нейросетями-художниками: текстуры, модели и звуки — из самих игр.
-- Автор — qwixxys. Код, шейдер и установщик написал ИИ-агент Claude Code (Anthropic, модель
-  Claude Opus 5.5) по задумке qwixxys, с проверкой в игре и отзывами автора.
+## License
+[MIT](LICENSE)
