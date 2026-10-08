@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.3 (2026-10-09)
+- Fixed: since 1.0.1 parts of Portal 2 lost their light and showed black (frames, broken ceilings, decals under the
+  projected sunlight). Capturing Portal 2's glows changed its render state behind its back; the add-on now saves and
+  restores the D3D9 state exactly around its own draws, and leaves Portal 2's added light passes alone.
+- `debug.txt` value 9 turns the glow layer off (for comparing).
+
 ## 1.0.2 (2026-10-09)
 - Fixed: craters blown into ceilings (and other holes with no sky above) were black. Portal 2's rooms now light the
   first few blocks of every hole in their walls, fading with depth; tunnels dug farther keep Minecraft's own light.

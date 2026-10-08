@@ -280,6 +280,7 @@ namespace render
 		{
 			last_debug = now;
 			debug_mode = 0.0f;
+			state.debug = 0;
 			FILE *f = nullptr;
 			static std::string path;
 			if (path.empty())
@@ -295,6 +296,7 @@ namespace render
 			if (fopen_s(&f, path.c_str(), "r") == 0 && f)
 			{
 				fscanf_s(f, "%f", &debug_mode);
+				state.debug = static_cast<int>(debug_mode);
 				fclose(f);
 			}
 			// an updated Portalcraft.fx (reinstall while the game runs) is picked up without a restart
@@ -312,7 +314,7 @@ namespace render
 			}
 		}
 		update_holes(rt, dev);
-		float p2[4] = { state.znear, state.zfar, state.cursor_visible ? 1.0f : 0.0f, debug_mode };
+		float p2[4] = { state.znear, state.zfar, state.cursor_visible ? 1.0f : 0.0f, debug_mode < 8.5f ? debug_mode : 0.0f }; // 9: add-on only
 		set_float(rt, "PC_P2", p2, 4);
 		float cur[4] = { state.cursor_x, state.cursor_y, s_staged ? 1.0f : 0.0f, 0.0f }; // z: Minecraft's R,G,B,A bytes arrived as they are
 		set_float(rt, "PC_Cursor", cur, 4);

@@ -13,6 +13,7 @@ namespace render
 		bool uniforms_found = false, textures_ok = false;
 		unsigned uploads = 0;
 		unsigned synced = 0, late = 0, wait_us = 0, upload_us = 0;
+		int debug = 0; // debug.txt
 		bool staged = true; // uploads through system-memory textures (else update_texture_region) // frames shown in step with Minecraft, given up on, time waited
 	};
 	extern State state;

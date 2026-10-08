@@ -5,7 +5,9 @@
 // wherever the glow is nearer than Minecraft's block.
 #include <reshade.hpp>
 #include "glow.hpp"
+#include "render.hpp"
 #include <string>
+#include <d3d9.h>
 
 using namespace reshade::api;
 
@@ -17,20 +19,16 @@ namespace glow
 	unsigned draws = 0;
 
 	// what Portal 2 has bound, as far as it matters here
-	static resource_view s_rtvs[4] = {};
-	static uint32_t s_rt_count = 0;
 	static resource_view s_dsv = {};
 	static bool s_scene = false; // render target 0 is the size of the screen (the scene, not a texture or a shadow map)
-	static bool s_blend = false, s_zwrite = true, s_zenable = true;
-	static uint32_t s_dst = 0, s_zfunc = static_cast<uint32_t>(compare_op::less_equal), s_mask = 0xF;
-	static viewport s_vp = {};
+	static bool s_blend = false, s_zwrite = true;
+	static uint32_t s_dst = 0, s_zfunc = static_cast<uint32_t>(compare_op::less_equal);
 	static bool s_busy = false; // while we draw (our own binds are not Portal 2's state)
+	static bool s_states_readable = false; // the device answers GetRenderState (not a pure device)
 
 	static void on_bind_render_targets(command_list *cmd, uint32_t count, const resource_view *rtvs, resource_view dsv)
 	{
 		if (s_busy) return;
-		s_rt_count = count < 4 ? count : 4;
-		for (uint32_t i = 0; i < s_rt_count; ++i) s_rtvs[i] = rtvs[i];
 		s_dsv = dsv;
 		s_scene = false;
 		if (count && rtvs[0].handle && s_w)
@@ -54,49 +52,64 @@ namespace glow
 			{
 			case dynamic_state::blend_enable: s_blend = values[i] != 0; break;
 			case dynamic_state::depth_write_mask: s_zwrite = values[i] != 0; break;
-			case dynamic_state::depth_enable: s_zenable = values[i] != 0; break;
 			case dynamic_state::depth_func: s_zfunc = values[i]; break;
-			case dynamic_state::render_target_write_mask: s_mask = values[i]; break;
 			case dynamic_state::dest_color_blend_factor: s_dst = values[i]; break;
 			default: break;
 			}
 		}
 	}
 
-	static void on_bind_viewports(command_list *, uint32_t first, uint32_t count, const viewport *vps)
-	{
-		if (!s_busy && first == 0 && count) s_vp = vps[0];
-	}
-
 	// added on top of what is there, depth tested but not written: a glow
 	static bool glowing()
 	{
-		return s_rtv.handle && s_scene && s_dsv.handle && s_blend && !s_zwrite && s_dst == static_cast<uint32_t>(blend_factor::one);
+		// (depth tested "equal": a light added onto surfaces already drawn, like the projected sunlight; not a glow, it
+		// would light up holes in those surfaces; debug.txt 9 turns the layer off)
+		return render::state.debug != 9 && s_rtv.handle && s_scene && s_dsv.handle && s_blend && !s_zwrite && s_dst == static_cast<uint32_t>(blend_factor::one)
+			&& s_zfunc != static_cast<uint32_t>(compare_op::equal);
 	}
 
+	// Our draws go straight to the D3D9 device and put back exactly what they change (render targets, depth buffer,
+	// viewport, scissor, a few render states): Portal 2's renderer caches its device state, so anything left changed,
+	// or restored from a guess, stayed wrong for its next draws (the projected sunlight went missing).
 	template <typename F>
 	static void redraw(command_list *cmd, F issue)
 	{
+		IDirect3DDevice9 *d = reinterpret_cast<IDirect3DDevice9 *>(cmd->get_device()->get_native());
+		IDirect3DSurface9 *rts[4] = {}, *ds = nullptr;
+		for (DWORD i = 0; i < 4; ++i) d->GetRenderTarget(i, &rts[i]);
+		d->GetDepthStencilSurface(&ds);
+		D3DVIEWPORT9 vp;
+		RECT sc;
+		d->GetViewport(&vp);
+		d->GetScissorRect(&sc);
 		s_busy = true;
 		// the glow itself, hidden where Portal 2 has something in front of it
-		cmd->bind_render_targets_and_depth_stencil(1, &s_rtv, s_dsv);
-		cmd->bind_viewports(0, 1, &s_vp); // binding a render target resets the viewport in D3D9
+		d->SetRenderTarget(0, reinterpret_cast<IDirect3DSurface9 *>(s_rtv.handle));
+		for (DWORD i = 1; i < 4; ++i)
+			if (rts[i]) d->SetRenderTarget(i, nullptr);
+		d->SetViewport(&vp); // setting a render target resets them
+		d->SetScissorRect(&sc);
 		issue();
 		// where it is: its nearest depth into our own buffer, no colour
-		if (s_dsv_own.handle)
+		if (s_dsv_own.handle && s_states_readable)
 		{
-			cmd->bind_render_targets_and_depth_stencil(1, &s_rtv, s_dsv_own);
-			cmd->bind_viewports(0, 1, &s_vp);
-			const dynamic_state st[4] = { dynamic_state::depth_enable, dynamic_state::depth_write_mask, dynamic_state::depth_func,
-				dynamic_state::render_target_write_mask };
-			const uint32_t on[4] = { 1, 1, static_cast<uint32_t>(compare_op::less_equal), 0 };
-			cmd->bind_pipeline_states(4, st, on);
+			const D3DRENDERSTATETYPE st[4] = { D3DRS_ZENABLE, D3DRS_ZWRITEENABLE, D3DRS_ZFUNC, D3DRS_COLORWRITEENABLE };
+			const DWORD on[4] = { D3DZB_TRUE, TRUE, D3DCMP_LESSEQUAL, 0 };
+			DWORD old[4] = {};
+			for (int i = 0; i < 4; ++i) d->GetRenderState(st[i], &old[i]);
+			d->SetDepthStencilSurface(reinterpret_cast<IDirect3DSurface9 *>(s_dsv_own.handle));
+			for (int i = 0; i < 4; ++i) d->SetRenderState(st[i], on[i]);
 			issue();
-			const uint32_t back[4] = { s_zenable ? 1u : 0u, 0, s_zfunc, s_mask };
-			cmd->bind_pipeline_states(4, st, back);
+			for (int i = 0; i < 4; ++i) d->SetRenderState(st[i], old[i]);
 		}
-		cmd->bind_render_targets_and_depth_stencil(s_rt_count, s_rtvs, s_dsv);
-		cmd->bind_viewports(0, 1, &s_vp);
+		for (DWORD i = 0; i < 4; ++i)
+			if (i == 0 || rts[i]) d->SetRenderTarget(i, rts[i]);
+		d->SetDepthStencilSurface(ds);
+		d->SetViewport(&vp);
+		d->SetScissorRect(&sc);
+		for (IDirect3DSurface9 *s : rts)
+			if (s) s->Release();
+		if (ds) ds->Release();
 		s_busy = false;
 		draws++;
 	}
@@ -117,7 +130,6 @@ namespace glow
 	{
 		reshade::register_event<reshade::addon_event::bind_render_targets_and_depth_stencil>(on_bind_render_targets);
 		reshade::register_event<reshade::addon_event::bind_pipeline_states>(on_bind_states);
-		reshade::register_event<reshade::addon_event::bind_viewports>(on_bind_viewports);
 		reshade::register_event<reshade::addon_event::draw>(on_draw);
 		reshade::register_event<reshade::addon_event::draw_indexed>(on_draw_indexed);
 	}
@@ -170,6 +182,11 @@ namespace glow
 			reshade::log::message(reshade::log::level::warning, "Portalcraft: no depth for Portal 2's glowing effects");
 			drop_depth(dev);
 		}
+		// the depth pass changes render states and must read them back first: not on a pure device
+		D3DDEVICE_CREATION_PARAMETERS cp = {};
+		reinterpret_cast<IDirect3DDevice9 *>(dev->get_native())->GetCreationParameters(&cp);
+		s_states_readable = (cp.BehaviorFlags & D3DCREATE_PUREDEVICE) == 0;
+		if (!s_states_readable) reshade::log::message(reshade::log::level::warning, "Portalcraft: pure D3D9 device, glows go on top of Minecraft blocks");
 		s_w = w;
 		s_h = h;
 		rt->update_texture_bindings("PC_GLOW", s_srv, s_srv);
