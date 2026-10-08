@@ -75,13 +75,12 @@ namespace glow
 	static void redraw(command_list *cmd, F issue)
 	{
 		IDirect3DDevice9 *d = reinterpret_cast<IDirect3DDevice9 *>(cmd->get_device()->get_native());
+		D3DVIEWPORT9 vp;
+		RECT sc;
+		if (FAILED(d->GetViewport(&vp)) || FAILED(d->GetScissorRect(&sc))) return; // can't put them back: leave it alone
 		IDirect3DSurface9 *rts[4] = {}, *ds = nullptr;
 		for (DWORD i = 0; i < 4; ++i) d->GetRenderTarget(i, &rts[i]);
 		d->GetDepthStencilSurface(&ds);
-		D3DVIEWPORT9 vp;
-		RECT sc;
-		d->GetViewport(&vp);
-		d->GetScissorRect(&sc);
 		s_busy = true;
 		// the glow itself, hidden where Portal 2 has something in front of it
 		d->SetRenderTarget(0, reinterpret_cast<IDirect3DSurface9 *>(s_rtv.handle));
@@ -90,17 +89,21 @@ namespace glow
 		d->SetViewport(&vp); // setting a render target resets them
 		d->SetScissorRect(&sc);
 		issue();
-		// where it is: its nearest depth into our own buffer, no colour
+		// where it is: its nearest depth into our own buffer, no colour, no stencil test (ours is empty)
 		if (s_dsv_own.handle && s_states_readable)
 		{
-			const D3DRENDERSTATETYPE st[4] = { D3DRS_ZENABLE, D3DRS_ZWRITEENABLE, D3DRS_ZFUNC, D3DRS_COLORWRITEENABLE };
-			const DWORD on[4] = { D3DZB_TRUE, TRUE, D3DCMP_LESSEQUAL, 0 };
-			DWORD old[4] = {};
-			for (int i = 0; i < 4; ++i) d->GetRenderState(st[i], &old[i]);
-			d->SetDepthStencilSurface(reinterpret_cast<IDirect3DSurface9 *>(s_dsv_own.handle));
-			for (int i = 0; i < 4; ++i) d->SetRenderState(st[i], on[i]);
-			issue();
-			for (int i = 0; i < 4; ++i) d->SetRenderState(st[i], old[i]);
+			const D3DRENDERSTATETYPE st[5] = { D3DRS_ZENABLE, D3DRS_ZWRITEENABLE, D3DRS_ZFUNC, D3DRS_COLORWRITEENABLE, D3DRS_STENCILENABLE };
+			const DWORD on[5] = { D3DZB_TRUE, TRUE, D3DCMP_LESSEQUAL, 0, FALSE };
+			DWORD old[5] = {};
+			bool ok = true;
+			for (int i = 0; i < 5; ++i) ok = ok && SUCCEEDED(d->GetRenderState(st[i], &old[i]));
+			if (ok)
+			{
+				d->SetDepthStencilSurface(reinterpret_cast<IDirect3DSurface9 *>(s_dsv_own.handle));
+				for (int i = 0; i < 5; ++i) d->SetRenderState(st[i], on[i]);
+				issue();
+				for (int i = 0; i < 5; ++i) d->SetRenderState(st[i], old[i]);
+			}
 		}
 		for (DWORD i = 0; i < 4; ++i)
 			if (i == 0 || rts[i]) d->SetRenderTarget(i, rts[i]);
@@ -182,11 +185,12 @@ namespace glow
 			reshade::log::message(reshade::log::level::warning, "Portalcraft: no depth for Portal 2's glowing effects");
 			drop_depth(dev);
 		}
-		// the depth pass changes render states and must read them back first: not on a pure device
-		D3DDEVICE_CREATION_PARAMETERS cp = {};
-		reinterpret_cast<IDirect3DDevice9 *>(dev->get_native())->GetCreationParameters(&cp);
-		s_states_readable = (cp.BehaviorFlags & D3DCREATE_PUREDEVICE) == 0;
-		if (!s_states_readable) reshade::log::message(reshade::log::level::warning, "Portalcraft: pure D3D9 device, glows go on top of Minecraft blocks");
+		// the depth pass changes render states and must read them back first. Portal 2 asks for a pure device, which
+		// can't answer, but the device it gets (through ReShade) may: ask it
+		DWORD probe = 0;
+		s_states_readable = SUCCEEDED(reinterpret_cast<IDirect3DDevice9 *>(dev->get_native())->GetRenderState(D3DRS_ZFUNC, &probe));
+		reshade::log::message(reshade::log::level::info, s_states_readable ? "Portalcraft: glows get their own depth"
+			: "Portalcraft: render states can't be read back: Portal 2's glows go on top of Minecraft's blocks");
 		s_w = w;
 		s_h = h;
 		rt->update_texture_bindings("PC_GLOW", s_srv, s_srv);

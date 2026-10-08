@@ -188,8 +188,10 @@ float3 PS(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
 	{
 		col = mc_tex(sColor, wuv).rgb;
 		// Portal 2's glowing effects (laser, sprites, particles) have no depth in Portal 2's own buffer: back on top of
-		// Minecraft where they are nearer than its block
-		if (p2_distance(tex2D(sGlowDepth, uv).r) < mcz + 2.0)
+		// Minecraft where they are nearer than its block (no depth of theirs at all: on top, the layer is black
+		// where there is no glow)
+		float gd = tex2D(sGlowDepth, uv).r;
+		if (gd > 0.999999 || p2_distance(gd) < mcz + 2.0)
 			col += tex2D(sGlow, uv).rgb;
 	}
 	float4 o = mc_tex(sOverlay, mcuv);

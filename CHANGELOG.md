@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.4 (2026-10-09)
+- Fixed: since 1.0.3 laser beams were cut by every Minecraft block, even blocks behind them. 1.0.3 judged from
+  Portal 2's device creation flags that render states can't be read back and skipped the glows' depth; the add-on
+  now asks the device itself. Without a glow depth, glows now go on top of Minecraft rather than vanishing.
+- The add-on checks every state it reads before drawing; if anything can't be read it leaves Portal 2 alone.
+
 ## 1.0.3 (2026-10-09)
 - Fixed: since 1.0.1 parts of Portal 2 lost their light and showed black (frames, broken ceilings, decals under the
   projected sunlight). Capturing Portal 2's glows changed its render state behind its back; the add-on now saves and
