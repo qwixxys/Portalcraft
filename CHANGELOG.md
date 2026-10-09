@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.0.7 (2026-10-09)
+- `Portalcraft.cmd`'s launch menu is in English and Russian, English first.
+
 ## 1.0.6 (2026-10-09)
 - `Portalcraft.cmd` asks how to start Minecraft: with your account (the Minecraft Launcher, or Prism Launcher, where
   it makes and starts a Portalcraft instance), offline (no sign-in, any nickname: it starts the Minecraft 26.3 a

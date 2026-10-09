@@ -44,13 +44,18 @@ if (Get-Process portal2 -ErrorAction SilentlyContinue) { Done 'Portal 2 уже �
 
 # ---- how to start Minecraft (last time's answers are the defaults)
 $settings = Read-LaunchSettings
-Write-Host 'Portalcraft: Minecraft внутри Portal 2'
+# (the menu in English, then Russian)
+Write-Host 'Portalcraft: Minecraft inside Portal 2 / Minecraft внутри Portal 2'
 Write-Host ''
+Write-Host 'How do you want to start Minecraft?'
 Write-Host 'Как запустить Minecraft?'
-Write-Host '  1 - со своим аккаунтом (лаунчер Minecraft или Prism Launcher)'
-Write-Host '  2 - без сети: без входа в аккаунт, с любым ником'
-Write-Host '  3 - сам запущу его из другого лаунчера'
-$mode = Ask 'Выбери 1, 2 или 3' @('1', '2', '3') $settings.mode
+Write-Host '  1 - with your account (Minecraft Launcher or Prism Launcher)'
+Write-Host '      со своим аккаунтом (лаунчер Minecraft или Prism Launcher)'
+Write-Host '  2 - offline: no sign-in, any nickname'
+Write-Host '      без сети: без входа в аккаунт, с любым ником'
+Write-Host "  3 - I'll start it from another launcher myself"
+Write-Host '      сам запущу его из другого лаунчера'
+$mode = Ask 'Choose 1, 2 or 3 / Выбери 1, 2 или 3' @('1', '2', '3') $settings.mode
 $firstTime = $settings.mode -ne $mode
 $settings.mode = $mode
 $mods = Join-Path $PcGameDir 'mods'
@@ -61,8 +66,9 @@ if ($mode -eq '1') {
 	$prism = Find-Prism
 	if ($official -and $prism) {
 		Write-Host ''
-		Write-Host 'Через какой лаунчер?  1 - лаунчер Minecraft   2 - Prism Launcher'
-		$launcher = Ask 'Выбери 1 или 2' @('1', '2') $settings.launcher
+		Write-Host 'Which launcher?       1 - Minecraft Launcher   2 - Prism Launcher'
+		Write-Host 'Через какой лаунчер?  1 - лаунчер Minecraft    2 - Prism Launcher'
+		$launcher = Ask 'Choose 1 or 2 / Выбери 1 или 2' @('1', '2') $settings.launcher
 		$settings.launcher = $launcher
 	} elseif ($official) { $launcher = '1' }
 	elseif ($prism) { $launcher = '2' }
@@ -75,8 +81,10 @@ if ($mode -eq '1') {
 	}
 } elseif ($mode -eq '2') {
 	Write-Host ''
+	Write-Host 'Nickname: 3-16 Latin letters, digits or _'
+	Write-Host 'Ник: 3-16 латинских букв, цифр или _'
 	while ($true) {
-		$name = (Read-Host "Ник (3-16 латинских букв, цифр или _) [$($settings.name)]").Trim()
+		$name = (Read-Host "Nickname / Ник [$($settings.name)]").Trim()
 		if (-not $name) { $name = $settings.name }
 		if ($name -match '^[A-Za-z0-9_]{3,16}$') { break }
 	}
