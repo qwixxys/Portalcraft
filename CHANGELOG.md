@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.6 (2026-10-09)
+- `Portalcraft.cmd` asks how to start Minecraft: with your account (the Minecraft Launcher, or Prism Launcher, where
+  it makes and starts a Portalcraft instance), offline (no sign-in, any nickname: it starts the Minecraft 26.3 a
+  launcher has already downloaded, never downloading the game itself), or from another launcher (Portal 2 only).
+  The last answers are the defaults. `install.cmd` works without the Minecraft Launcher.
+- Fixed: a hole that opens into Portal 2's own open space (a thin wall, a corner, a wall blown through) showed the
+  wall's old texture, which Portal 2 still draws there, since Minecraft has nothing behind it. Such a hole is dark now;
+  along a hole's rim the rock next to it fills in.
+
 ## 1.0.5 (2026-10-09)
 - Fixed: a hole blown into a wall under Portal 2's projected sunlight still showed the light, its shadows and the
   wall's texture over the Minecraft rock. Portal 2's added light lies on its surfaces; the composite now puts a glow

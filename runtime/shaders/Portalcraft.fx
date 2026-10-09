@@ -114,6 +114,9 @@ float3 mc_ray(float2 uv)
 	return float3(s.x, 1.0 - s.y, 1.0 / z);
 }
 
+// around a pixel (screen pixels): where a hole's rim looks for Minecraft's side of the hole
+static const float2 k_rim[8] = { float2(2, 0), float2(-2, 0), float2(0, 2), float2(0, -2), float2(4, 0), float2(-4, 0), float2(0, 4), float2(0, -4) };
+
 float3 PS(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
 {
 	float3 col = tex2D(sBack, uv).rgb;
@@ -169,11 +172,28 @@ float3 PS(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
 	float w = ray.x < 0.0 ? 0.0 : tex2D(sDepth, wuv).r;
 	float mcz = w > 0.0 ? mc_distance(w) * ray.z : 1e9; // along this camera's view axis, like p2z (none: its sky)
 	bool minecraft = false; // this pixel shows Minecraft instead of Portal 2
+	bool dark = false; // a hole Minecraft has nothing behind
+	float2 cuv = wuv; // where Minecraft's colour comes from
 	if (hole)
 	{
-		// the wall is gone: whatever Minecraft has behind it. Only its sky (nothing there) keeps Portal 2's pixel: along
-		// a hole's rim Minecraft's ray just misses the hole's side, which showed as a thin line of sky
-		minecraft = w > 0.0;
+		// the wall is gone: whatever Minecraft has behind it
+		minecraft = ray.x >= 0.0;
+		if (minecraft && w <= 0.0)
+		{
+			// Minecraft has nothing there. Along a hole's rim its ray just misses the hole's side: the side's colour
+			// next to it. Otherwise the hole opens into Portal 2's own open space (a thin wall, a corner, a wall blown
+			// through), which only Portal 2 has, and Portal 2 still draws its wall there: dark, not the wall's texture
+			dark = true;
+			[unroll] for (int i = 0; i < 8; i++)
+			{
+				float2 o = k_rim[i] * float2(BUFFER_RCP_WIDTH, BUFFER_RCP_HEIGHT);
+				if (dark && tex2Dlod(sDepth, float4(wuv + o, 0.0, 0.0)).r > 0.0)
+				{
+					dark = false;
+					cuv = wuv + o;
+				}
+			}
+		}
 	}
 	else if (w > 0.0)
 	{
@@ -189,7 +209,7 @@ float3 PS(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
 		minecraft = true; // inside the walls: Portal 2 seen from behind is not real, Minecraft's sky is
 	if (minecraft)
 	{
-		col = mc_tex(sColor, wuv).rgb;
+		col = dark ? float3(0.015, 0.015, 0.018) : mc_tex(sColor, cuv).rgb;
 		// Portal 2's glowing effects (laser, sprites, particles) have no depth in Portal 2's own buffer: back on top of
 		// Minecraft where they are nearer than its block, and in front of Portal 2's own surface there. Light added
 		// onto a surface (the projected sunlight and its shadows) lies on it: not over a hole blown into that surface.

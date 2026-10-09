@@ -13,16 +13,21 @@ solid to Chell.
 ## Requirements
 - Windows 10/11
 - Portal 2 (Steam)
-- Minecraft Java Edition with the official launcher (the installer adds Fabric Loader 0.19.5 and Fabric API for 26.3)
+- Minecraft Java Edition 26.3, installed by the official launcher or Prism Launcher (the installer adds Fabric
+  Loader 0.19.5 and Fabric API)
 
 ## Install
 1. Download the latest `Portalcraft-<version>.zip` from [Releases](https://github.com/qwixxys/Portalcraft/releases) and unzip it.
 2. Close the Minecraft Launcher and run `install.cmd`.
 
 ## Play
-1. Run `Portalcraft.cmd`. It starts Portal 2 and opens the Minecraft Launcher.
-2. Pick the **Portalcraft** installation in the launcher and press Play.
-3. Start any chapter in Portal 2.
+1. Run `Portalcraft.cmd` and choose how to start Minecraft:
+   1. **With your account**: the official launcher opens (pick the **Portalcraft** installation and press Play),
+      or Prism Launcher starts its own Portalcraft instance.
+   2. **Offline**: no sign-in, any nickname. Starts the Minecraft 26.3 your launcher has already downloaded.
+   3. **Another launcher**: Portal 2 only; start a Minecraft 26.3 + Fabric instance with the two jars from
+      `%APPDATA%\.minecraft\portalcraft\mods` yourself.
+2. Start any chapter in Portal 2.
 
 | Key | Action |
 |---|---|

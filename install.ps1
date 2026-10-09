@@ -2,7 +2,8 @@
 #  - Portal 2: puts the ReShade runtime folder (add-on, effect, config) and two VScript helpers in the game folder.
 #    ReShade's d3d9.dll itself is only placed while you play (play.ps1 puts it in and takes it out).
 #  - Minecraft: adds a "Portalcraft" installation (Fabric 0.19.5 for 26.3) to your own Minecraft Launcher,
-#    with its own game folder holding this mod and Fabric API. You start it signed in, as usual.
+#    with its own game folder holding this mod and Fabric API. You start it signed in, as usual. Portalcraft.cmd can
+#    also start Minecraft through Prism Launcher (an instance with these mods) or offline (tools\minecraft.ps1).
 param([switch]$Uninstall)
 $ErrorActionPreference = 'Stop'
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -60,8 +61,10 @@ if ($Uninstall) {
 	if (Test-Path $rt) { Remove-Item $rt -Recurse -Force }
 	$scripts = Join-Path $p2 'portal2\scripts\vscripts\portalcraft'
 	if (Test-Path $scripts) { Remove-Item $scripts -Recurse -Force }
-	Edit-LauncherProfiles { param($j) $j.profiles.PSObject.Properties.Remove('portalcraft') }
+	if (Test-Path (Join-Path $mcRoot 'launcher_profiles.json')) { Edit-LauncherProfiles { param($j) $j.profiles.PSObject.Properties.Remove('portalcraft') } }
 	Write-Host "Portalcraft removed (your Minecraft world folder $gameDir is kept)."
+	$prism = Join-Path $env:APPDATA 'PrismLauncher\instances\Portalcraft'
+	if (Test-Path $prism) { Write-Host "Prism Launcher's Portalcraft instance is kept too, with its world (delete it in Prism if you like)." }
 	return
 }
 
@@ -115,7 +118,9 @@ if (-not (Test-Path $apiJar)) {
 # launcher installation (left alone when it is already set up, so the launcher may stay open)
 $current = $null
 try { $current = (Get-Content (Join-Path $mcRoot 'launcher_profiles.json') -Raw -Encoding UTF8 | ConvertFrom-Json).profiles.portalcraft } catch {}
-if ($current -and $current.lastVersionId -eq $PROFILE_ID -and $current.gameDir -eq $gameDir -and $current.javaArgs -like '*--enable-native-access=ALL-UNNAMED*') {
+if (-not (Test-Path (Join-Path $mcRoot 'launcher_profiles.json'))) {
+	Write-Host 'Minecraft: no Minecraft Launcher here; Portalcraft.cmd starts Minecraft through Prism Launcher or offline'
+} elseif ($current -and $current.lastVersionId -eq $PROFILE_ID -and $current.gameDir -eq $gameDir -and $current.javaArgs -like '*--enable-native-access=ALL-UNNAMED*') {
 	Write-Host "Minecraft: launcher installation 'Portalcraft' is already set up"
 } else {
 Edit-LauncherProfiles {

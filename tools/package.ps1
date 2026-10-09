@@ -21,7 +21,7 @@ function Add([string]$rel) {
 
 # to play
 foreach ($f in 'Portalcraft.cmd', 'install.cmd', 'install.ps1', 'uninstall.cmd', 'play.cmd', 'play.ps1',
-	'README.md', 'README.ru.md', 'CHANGELOG.md', 'PROTOCOL.md', 'LICENSE', 'tools\find-portal2.ps1',
+	'README.md', 'README.ru.md', 'CHANGELOG.md', 'PROTOCOL.md', 'LICENSE', 'tools\find-portal2.ps1', 'tools\minecraft.ps1',
 	'addon\out\Portalcraft.addon32', "mc\build\libs\portalcraft-$Version.jar", 'runtime',
 	'p2\scripts\vscripts\portalcraft\solids.nut', 'p2\scripts\vscripts\portalcraft\view.nut',
 	'third_party\reshade_payload\ReShade32.dll', 'third_party\reshade-6.8.0\LICENSE.md') { Add $f }
